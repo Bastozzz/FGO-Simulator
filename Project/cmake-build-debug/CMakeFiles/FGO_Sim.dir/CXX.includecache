@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+D:/Documents/Projects/FGO_Sim/Project/Battle/Battle.cpp
+Battle.h
+D:/Documents/Projects/FGO_Sim/Project/Battle/Battle.h
+
+D:/Documents/Projects/FGO_Sim/Project/Battle/Battle.h
+../Servant/Servant.h
+D:/Documents/Projects/FGO_Sim/Project/Servant/Servant.h
+../Enemy/Enemy.h
+D:/Documents/Projects/FGO_Sim/Project/Enemy/Enemy.h
+../Battlefield/Battlefield.h
+D:/Documents/Projects/FGO_Sim/Project/Battlefield/Battlefield.h
+chrono
+-
+thread
+-
+
+D:/Documents/Projects/FGO_Sim/Project/Battlefield/Battlefield.h
+
+D:/Documents/Projects/FGO_Sim/Project/Enemy/Enemy.h
+iostream
+-
+
+D:/Documents/Projects/FGO_Sim/Project/Servant/Card/Card.h
+iostream
+-
+
+D:/Documents/Projects/FGO_Sim/Project/Servant/Servant.h
+Card/Card.h
+D:/Documents/Projects/FGO_Sim/Project/Servant/Card/Card.h
+iostream
+-
+vector
+-
+

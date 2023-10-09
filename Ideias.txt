@@ -1,0 +1,10 @@
+SIMULADOR DE FATE:
+Ficheiro de texto com nomes de personagens e skills iguais.
+Distribuicao de cartas e NP também. Começar com characters mais simples.
+
+Começar por Characters -> Class -> Noble Phantasm -> Card -> Inimigos
+	Skill -> Battlefield(detalhes) -> Passive Skill -> Attribute -> Append Skill;
+
+-> NO FUTURO IMPLEMENTAR PARA CADA NIVEL DA PERSONAGEM MUDAR O ATTACK E O HP
+
+USAR OPERADORES ATTACK E OUTROS 
