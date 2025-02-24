@@ -6,6 +6,7 @@
 #define FGO_SIM_CARD_H
 
 #include <iostream>
+
 using namespace std;
 class Servant;
 
@@ -15,8 +16,10 @@ class Card {
 
     int selectionOrder;
     Servant * servantAttached;
+
 public:
     Card(){};
+    ~Card(){cout << "Card destroyed";};
     Card(string t, Servant * s);
 
     void setOrder(int i);

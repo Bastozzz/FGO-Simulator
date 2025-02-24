@@ -12,6 +12,7 @@
 #include <fstream>
 #include <memory>
 #include <stdexcept>
+#include <csignal>
 
 class Simulator {
 

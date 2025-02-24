@@ -5,6 +5,7 @@
 #define FGO_SIM_SERVANT_H
 
 #include "Card/Card.h"
+#include "Skill/Skill.h"
 #include <iostream>
 #include <vector>
 using namespace std;
@@ -29,7 +30,7 @@ class Servant {
     //vector<string> ALLIGNMENT;
     //vector<string> BASIC_TRAITS;
     vector<Card*> DECK;
-    //vector<Enemy_Skill> SKILL;
+    vector<Skill*> SKILLS;
     //vector<Passive_Skill> PASSIVE_SKILLS;
     //vector<Append_Skill> APPEND_SKILLS;
     //Noble_Phantasm * NP;

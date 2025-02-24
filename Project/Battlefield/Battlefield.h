@@ -5,7 +5,6 @@
 #ifndef FGO_SIM_BATTLEFIELD_H
 #define FGO_SIM_BATTLEFIELD_H
 
-
 class Battlefield {
 public:
     Battlefield() = default;

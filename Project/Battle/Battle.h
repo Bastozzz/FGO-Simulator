@@ -27,6 +27,8 @@ public:
 
     void fight();
     void attack();
+    void chooseSkills();
+
     void damagePhase();
     void checkdeath();
     void changeTarget(int t);
@@ -38,9 +40,12 @@ public:
     static void printLine();
 
     void showCards();
+    void showSkills();
 
     void orderCards();
+    int checkHowManyEnemies();
 
+    void victoryScreen();
 };
 
 

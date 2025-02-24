@@ -1,0 +1,20 @@
+SERVANT_NAME(Without spacings)
+Class
+ID (example: Artoria is 2)
+Level
+HP
+ATTACK
+ATTRIBUTE (example: Earth)
+Cost
+Leveling Curve
+Star Absorbtion rate
+Star Gen Rate
+NP Charge ATK Rate
+NP Charge DEF Rate
+Death Rate
+Gender (M/F)
+Card deck (example: QAABB)
+Hits for card type (example: 2213, QuickArtsBusterExtra)
+First Skill Name
+Second Skill Name
+Third Skill Name

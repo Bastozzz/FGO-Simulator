@@ -5,6 +5,11 @@
 
 using namespace std;
 
+void sig_handler(int signal){
+    if(signal == SIGINT)
+        exit(0);
+}
+
 int Simulator::normalBattle(int record, int mainQuest, int section, int arrow) {
     //Main quests
     if(record == 1){
@@ -17,6 +22,7 @@ int Simulator::normalBattle(int record, int mainQuest, int section, int arrow) {
 
                     //Creation of the enemy forces
                     vector<Enemy*> Enemies;
+
                     Enemies.push_back(getEnemy("Skeleton(Saber)"));
                     Enemies.push_back(getEnemy("Skeleton(Saber)"));
 
@@ -35,6 +41,7 @@ int Simulator::normalBattle(int record, int mainQuest, int section, int arrow) {
 }
 
 int Simulator::startSim() {
+    signal(SIGINT, sig_handler);
     normalBattle(1, 1, 1, 1);
     cout << " ________  ________   ________          ________   ___   _____ ______      \n"
             "|\\  _____\\|\\   ____\\ |\\   __  \\        |\\   ____\\ |\\  \\ |\\   _ \\  _   \\    \n"

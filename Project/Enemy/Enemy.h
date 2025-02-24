@@ -35,6 +35,7 @@ public:
     Enemy(const string * n, int lv, int h, int a, const string * r, const string * attri, int c, int act, int crit_c, int death, const string * gen);
 
     void takeDamage(int dmg);
+    void test();
 
     string getName() const;
     int getLvl() const;

@@ -5,7 +5,6 @@
 #ifndef FGO_SIM_SKILL_H
 #define FGO_SIM_SKILL_H
 
-
 class Skill {
 
 };

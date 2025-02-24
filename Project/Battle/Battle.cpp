@@ -2,6 +2,7 @@
 // Created by Bife on 17/01/2023.
 //
 
+#include <conio.h>
 #include "Battle.h"
 
 Battle::Battle(vector<Servant*> P, vector<Enemy*> E, Battlefield * S):Party(std::move(P)), Enemies(std::move(E)), TURN(1), STAGE(1){}
@@ -43,8 +44,7 @@ void Battle::fight() {
         orderCards();
         char c = getchar();
         if(c == '1')
-            cout << "Skills";
-            //skills();
+            chooseSkills();
         else if(c == '2')
             attack();
         else if(c == '3'){
@@ -60,9 +60,11 @@ void Battle::fight() {
         else if(c == 'w' || c == 'W') {
             if (TARGET > 0) changeTarget(TARGET - 1);
         }
-
+        if(checkHowManyEnemies() == 0){
+            victoryScreen();
+            break;
+        }
     }
-
     cout << endl << "-------------------------------------------" << endl;
     //The fight has ended
     delete this;
@@ -73,7 +75,9 @@ void Battle::attack() {
     for(int i = 0; i < 3; i++) {
         showStage();
         showCards();
-        char c = getchar();
+        char c;
+        cin.get(c);
+
         if (c == '1' && CardsOnPlay[0]->getOrder() == 0)
             addToCombo(CardsOnPlay[0]);
         else if (c == '2' && CardsOnPlay[1]->getOrder() == 0)
@@ -89,6 +93,11 @@ void Battle::attack() {
             cout << "You exited the battle" << endl;
             break;
         }
+        else if(c == 'e' || c == 'E'){
+            CardsOnPlay[i]->setOrder(0);
+            return;
+        }
+
         //Choose next target
         else if(c == 's' || c == 'S'){
             if(TARGET < 2 && TARGET < Enemies.size()-1){
@@ -108,10 +117,19 @@ void Battle::attack() {
     }
 
     damagePhase();
-
+    showStage();
+    //this_thread::sleep_for(3s);
+    checkdeath();
     for(int i = 0; i < 5; i++)
         CardsOnPlay[i]->setOrder(0);
+}
 
+void Battle::chooseSkills(){
+    system("cls");
+    showStage();
+    showSkills();
+
+    getch();
 }
 
 void Battle::damagePhase() {
@@ -123,25 +141,29 @@ void Battle::damagePhase() {
         //CALCULATE THE DAMAGE FROM CLASS ADVANTAGE
         //CALCULATE THE CRIT DAMAGE
         //TARGET CHANGES IF CHARACTER CARD CHANGES
-        if(Combo[i]->getType() == "Buster"){
+        if(Combo[i]->getType() == "Buster")
             Enemies[TARGET]->takeDamage(Combo[i]->getServantAttached()->getAtk() * 0.23 * randomModifier * 1.5);
-        }
-        else if(Combo[i]->getType() == "Arts"){
+        else if(Combo[i]->getType() == "Arts")
             Enemies[TARGET]->takeDamage(Combo[i]->getServantAttached()->getAtk() * 0.23 * randomModifier * 1.0);
-        }
-        else if(Combo[i]->getType() == "Quick"){
+        else if(Combo[i]->getType() == "Quick")
             Enemies[TARGET]->takeDamage(Combo[i]->getServantAttached()->getAtk() * 0.23 * randomModifier * 0.8);
-        }
     }
 }
 
 void Battle::checkdeath() {
     for(int e = 0; e < Enemies.size(); e++){
-        if(Enemies[e]->getHp() <= 0)
+        cout << Enemies[e]->getHp();
+        if(Enemies[e]->getHp() <= 0){
             delete Enemies[e];
+            Enemies.erase(Enemies.begin()+e);
+            changeTarget(0);
+        }
     }
 }
 
+int Battle::checkHowManyEnemies() {
+    return (Enemies.size());
+}
 
 
 void Battle::changeTarget(int t) {
@@ -289,6 +311,24 @@ void Battle::showCards() {
     cout << "                  ";
     for(int i = 0; i < 5; i++)
         cout << "-----------       ";
+}
+
+void Battle::showSkills(){
+
+}
+
+void Battle::victoryScreen(){
+    system("cls");
+    cout << "\n\n\n\n\n\n\n\n########.......##...######################################......#######...####.###....###.####...######.####...###.\n"
+            ".###..####....###...##.#########.#######.####.....####...#.......##....#..###..#####..##...###.###...##..###...###.\n"
+            ".###..###....#####......###.##...####....###......###..#.........##...#...###..######.##...###.#####.....###...###.\n"
+            ".#######.....#..##......##.......###.....###.......#####........#######...###..##..#####...###...######..#########.\n"
+            ".###..###...#######....###.......####....###....#..##..#........###...#...###..##...####...###.#....####.###...###.\n"
+            ".###...###.##....###...###........##.....###...##..##....##.....####......###..##....###...###..#....###.###...###.\n"
+            ".###...##..##....####..###.......####....#######..########......####......###..##..........##....#####...###...##..\n"
+            ".#######................................................................................................#####.####.";
+    getch();
+    system("cls");
 }
 
 void Battle::orderCards() {

@@ -15,3 +15,6 @@ Linear
 F
 QAABB
 2213
+Charisma_B
+Dragon Reactor Core B
+Radiant Road EX
