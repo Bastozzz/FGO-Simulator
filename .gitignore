@@ -32,4 +32,9 @@
 *.app
 
 .idea/
-./Project/cmake-build-debug/
+# CLion / CMake build folders
+cmake-build-*/
+build/
+
+# Oracle Instant Client (local only, not used by the project)
+Project/libraries/

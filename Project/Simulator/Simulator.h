@@ -7,12 +7,8 @@
 #include "../Utils/utils.h"
 #include "../Battle/Battle.h"
 #include <iostream>
+#include <string>
 #include <vector>
-#include <sstream>
-#include <fstream>
-#include <memory>
-#include <stdexcept>
-#include <csignal>
 
 class Simulator {
 
@@ -22,8 +18,10 @@ public:
     static int normalBattle(int record, int mainQuest, int section, int arrow);
     //int customBattle();
 
+    // Lets the player choose up to 3 servants. Returns an empty vector if the player gives up
     static vector<Servant*> chooseServants();
-    static Enemy * getEnemy(string name);
+    // Names of every servant file in CHARACTERS/Servants
+    static vector<string> listServants();
 };
 
 

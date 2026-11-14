@@ -7,6 +7,7 @@
 #include "Card/Card.h"
 #include "Skill/Skill.h"
 #include <iostream>
+#include <string>
 #include <vector>
 using namespace std;
 
@@ -17,7 +18,7 @@ class Servant {
     int LVL;
     int HP;
     int ATK;
-    //ATTRIBUTE
+    string ATTRIBUTE;
     int COST;
     string CURVE;
     int STAR_ABSORB;
@@ -26,11 +27,12 @@ class Servant {
     double NP_CHARGE_DEF;
     double DEATH_RATE;
     string GENDER;
+    string HITS; // Hits per card type, e.g. "2213" = Quick, Arts, Buster, Extra
 
     //vector<string> ALLIGNMENT;
     //vector<string> BASIC_TRAITS;
     vector<Card*> DECK;
-    vector<Skill*> SKILLS;
+    vector<string> SKILL_NAMES;
     //vector<Passive_Skill> PASSIVE_SKILLS;
     //vector<Append_Skill> APPEND_SKILLS;
     //Noble_Phantasm * NP;
@@ -40,13 +42,24 @@ class Servant {
     int CURRENT_NPCHARGE;
 
 public:
-    Servant(const string *n, const string *ak, int i, int LVL, int h, int a, const string *attri, int c, const string *curve,
-            int sAbs, double sGen, double npChAtt, double npChDef, double death, const string *gen, const string *cards, int hits);
+    Servant(const string &n, const string &ak, int i, int lv, int h, int a, const string &attri, int c, const string &curve,
+            int sAbs, double sGen, double npChAtt, double npChDef, double death, const string &gen, const string &cards,
+            const string &hits, const vector<string> &skills);
+    ~Servant();
+
+    // A servant owns its cards, so it can't be copied
+    Servant(const Servant &) = delete;
+    Servant &operator=(const Servant &) = delete;
+
+    // Reads a servant from CHARACTERS/Servants/<fileName>.txt (see FORMAT.txt)
+    // Returns nullptr if the file doesn't exist or is badly formatted
+    static Servant *loadFromFile(const string &fileName);
 
     string getName() const;
     string getAKA() const;
     int getLvl() const;
     int getAtk() const;
-    vector<Card*> getCards();
+    const vector<string> &getSkillNames() const;
+    const vector<Card*> &getCards() const;
 };
 #endif //FGO_SIM_SERVANT_H

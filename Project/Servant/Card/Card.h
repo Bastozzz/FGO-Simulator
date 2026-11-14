@@ -6,27 +6,26 @@
 #define FGO_SIM_CARD_H
 
 #include <iostream>
+#include <string>
 
 using namespace std;
 class Servant;
 
 class Card {
     string TYPE;
+    Servant * servantAttached;
     int CURRENT_CRIT_STARS;
 
-    int selectionOrder;
-    Servant * servantAttached;
+    int selectionOrder; // 0 = not selected, 1..3 = position in the chain
 
 public:
-    Card(){};
-    ~Card(){cout << "Card destroyed";};
     Card(string t, Servant * s);
 
     void setOrder(int i);
 
-    int getOrder();
-    string getType();
-    Servant * getServantAttached();
+    int getOrder() const;
+    string getType() const;
+    Servant * getServantAttached() const;
 };
 
 

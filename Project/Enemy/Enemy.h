@@ -5,6 +5,7 @@
 #ifndef FGO_SIM_ENEMY_H
 #define FGO_SIM_ENEMY_H
 #include <iostream>
+#include <string>
 using namespace std;
 
 class Enemy {
@@ -13,7 +14,7 @@ class Enemy {
     int HP;
     int ATTACK;
     string RANK;
-    //ATTRIBUTE;
+    string ATTRIBUTE;
     int CHARGES;
     int ACTIONS;
     int CRIT_CHANCE;
@@ -32,10 +33,14 @@ class Enemy {
     int CURRENT_CHARGES;
 
 public:
-    Enemy(const string * n, int lv, int h, int a, const string * r, const string * attri, int c, int act, int crit_c, int death, const string * gen);
+    Enemy(const string &n, int lv, int h, int a, const string &r, const string &attri, int c, int act, int crit_c, int death, const string &gen);
+
+    // Reads an enemy from CHARACTERS/Enemies/<fileName>.txt
+    // Returns nullptr if the file doesn't exist or is badly formatted
+    static Enemy *loadFromFile(const string &fileName);
 
     void takeDamage(int dmg);
-    void test();
+    bool isDead() const;
 
     string getName() const;
     int getLvl() const;

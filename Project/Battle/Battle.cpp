@@ -2,10 +2,16 @@
 // Created by Bife on 17/01/2023.
 //
 
-#include <conio.h>
 #include "Battle.h"
+#include "../Utils/utils.h"
+#include <algorithm>
 
-Battle::Battle(vector<Servant*> P, vector<Enemy*> E, Battlefield * S):Party(std::move(P)), Enemies(std::move(E)), TURN(1), STAGE(1){}
+// The game shows at most 3 enemies at the same time
+static const size_t MAX_ENEMIES_ON_FIELD = 3;
+static const size_t CELL_WIDTH = 58;
+
+Battle::Battle(vector<Servant*> P, vector<Enemy*> E, Battlefield * S)
+    : TURN(1), STAGE(1), TARGET(0), Party(std::move(P)), Enemies(std::move(E)), Stage(S), rng(random_device{}()) {}
 
 Battle::~Battle() {
     //This will delete everything so the memory is freed
@@ -18,224 +24,206 @@ Battle::~Battle() {
     delete Stage;
 }
 
-void Battle::fight() {
-    srand (time(NULL));
-    system("cls");
+bool Battle::fight() {
+    clearScreen();
     cout << "The fight is about to begin! (Knowledge is power)" << endl << endl;
-    for(auto & i : Party)
-        cout << "1 - " << i->getName() << " | Level:" << i->getLvl() << endl;
-    //SHOW STATS
+    for(size_t i = 0; i < Party.size(); i++)
+        cout << i + 1 << " - " << Party[i]->getName() << " | Level:" << Party[i]->getLvl() << endl;
 
     cout << endl << "vs" << endl << endl;
 
     for(auto & Enemy : Enemies)
         cout << Enemy->getName() << " | Level:" << Enemy->getLvl() << endl;
-    //SHOW LEVEL
+
+    waitForEnter();
 
     changeTarget(0);
-
-    //this_thread::sleep_for(3s);
+    orderCards();
 
     //Start the fight
     for(;;){
-        //PASS TURNS
         showStage();
         showOptions();
-        orderCards();
-        char c = getchar();
+        char c = readKey();
         if(c == '1')
             chooseSkills();
         else if(c == '2')
             attack();
         else if(c == '3'){
-            system("cls");
+            clearScreen();
             cout << "You exited the battle" << endl;
-            break;
+            return false;
         }
-            //Choose next target
-        else if(c == 's' || c == 'S'){
-            if(TARGET < 2 && TARGET < Enemies.size()-1) changeTarget(TARGET + 1);
-        }
-            //Choose target before
-        else if(c == 'w' || c == 'W') {
-            if (TARGET > 0) changeTarget(TARGET - 1);
-        }
+        //Choose next target
+        else if(c == 's')
+            changeTarget(TARGET + 1);
+        //Choose target before
+        else if(c == 'w' && TARGET > 0)
+            changeTarget(TARGET - 1);
+
         if(checkHowManyEnemies() == 0){
             victoryScreen();
-            break;
+            return true;
         }
     }
-    cout << endl << "-------------------------------------------" << endl;
-    //The fight has ended
-    delete this;
 }
 
 void Battle::attack() {
     Combo.clear();
-    for(int i = 0; i < 3; i++) {
+    resetCardOrders();
+
+    const size_t cardsToChoose = min<size_t>(3, CardsOnPlay.size());
+    while(Combo.size() < cardsToChoose) {
         showStage();
         showCards();
-        char c;
-        cin.get(c);
+        cout << endl << endl << "1-5: choose card | e: undo last card | w/s: change target | c: cancel" << endl << "-> ";
+        char c = readKey();
 
-        if (c == '1' && CardsOnPlay[0]->getOrder() == 0)
-            addToCombo(CardsOnPlay[0]);
-        else if (c == '2' && CardsOnPlay[1]->getOrder() == 0)
-            addToCombo(CardsOnPlay[1]);
-        else if (c == '3' && CardsOnPlay[2]->getOrder() == 0)
-            addToCombo(CardsOnPlay[2]);
-        else if (c == '4' && CardsOnPlay[3]->getOrder() == 0)
-            addToCombo(CardsOnPlay[3]);
-        else if (c == '5' && CardsOnPlay[4]->getOrder() == 0)
-            addToCombo(CardsOnPlay[4]);
-        else if (c == '6') {
-            system("cls");
-            cout << "You exited the battle" << endl;
-            break;
+        if(c >= '1' && c <= '5') {
+            size_t index = c - '1';
+            if(index < CardsOnPlay.size() && CardsOnPlay[index]->getOrder() == 0)
+                addToCombo(CardsOnPlay[index]);
         }
-        else if(c == 'e' || c == 'E'){
-            CardsOnPlay[i]->setOrder(0);
+        //Undo the last chosen card
+        else if(c == 'e') {
+            if(!Combo.empty()) {
+                Combo.back()->setOrder(0);
+                Combo.pop_back();
+            }
+        }
+        //Go back without attacking
+        else if(c == 'c') {
+            resetCardOrders();
+            Combo.clear();
             return;
         }
-
         //Choose next target
-        else if(c == 's' || c == 'S'){
-            if(TARGET < 2 && TARGET < Enemies.size()-1){
-                changeTarget(TARGET + 1);
-                i--;
-            }
-        }
+        else if(c == 's')
+            changeTarget(TARGET + 1);
         //Choose target before
-        else if(c == 'w' || c == 'W') {
-            if (TARGET > 0) {
-                changeTarget(TARGET - 1);
-                i--;
-            }
-        }
-        else
-            i--;
+        else if(c == 'w' && TARGET > 0)
+            changeTarget(TARGET - 1);
     }
 
-    damagePhase();
     showStage();
-    //this_thread::sleep_for(3s);
+    damagePhase();
     checkdeath();
-    for(int i = 0; i < 5; i++)
-        CardsOnPlay[i]->setOrder(0);
+    waitForEnter();
+
+    resetCardOrders();
+    Combo.clear();
+    TURN++;
+    orderCards();
 }
 
 void Battle::chooseSkills(){
-    system("cls");
     showStage();
     showSkills();
-
-    getch();
+    waitForEnter("Skills aren't implemented yet. Press Enter to go back...");
 }
 
 void Battle::damagePhase() {
+    uniform_real_distribution<double> randomModifier(0.9, 1.1);
+    cout << endl;
+
     //Card damage
-    for(int i = 0; i < 3; i++){
-        int r = rand() %  20 + 90;
-        double randomModifier = (double)r / 100 ;
+    for(Card *card : Combo){
+        //If the target died with the previous card, attack the next enemy alive
+        retargetIfDead();
+        if(Enemies[TARGET]->isDead())
+            break;
+
         //CALCULATE THE DAMAGE FROM CLASS
         //CALCULATE THE DAMAGE FROM CLASS ADVANTAGE
         //CALCULATE THE CRIT DAMAGE
-        //TARGET CHANGES IF CHARACTER CARD CHANGES
-        if(Combo[i]->getType() == "Buster")
-            Enemies[TARGET]->takeDamage(Combo[i]->getServantAttached()->getAtk() * 0.23 * randomModifier * 1.5);
-        else if(Combo[i]->getType() == "Arts")
-            Enemies[TARGET]->takeDamage(Combo[i]->getServantAttached()->getAtk() * 0.23 * randomModifier * 1.0);
-        else if(Combo[i]->getType() == "Quick")
-            Enemies[TARGET]->takeDamage(Combo[i]->getServantAttached()->getAtk() * 0.23 * randomModifier * 0.8);
+        double cardValue = 1.0;
+        if(card->getType() == "Buster")
+            cardValue = 1.5;
+        else if(card->getType() == "Arts")
+            cardValue = 1.0;
+        else if(card->getType() == "Quick")
+            cardValue = 0.8;
+
+        Servant *s = card->getServantAttached();
+        int damage = (int)(s->getAtk() * 0.23 * cardValue * randomModifier(rng));
+        Enemy *target = Enemies[TARGET];
+        target->takeDamage(damage);
+
+        cout << "  " << s->getAKA() << " - " << card->getType() << " -> " << target->getName()
+             << ": " << damage << " damage" << (target->isDead() ? " (defeated)" : "") << endl;
     }
 }
 
 void Battle::checkdeath() {
-    for(int e = 0; e < Enemies.size(); e++){
-        cout << Enemies[e]->getHp();
-        if(Enemies[e]->getHp() <= 0){
-            delete Enemies[e];
-            Enemies.erase(Enemies.begin()+e);
-            changeTarget(0);
+    for(auto it = Enemies.begin(); it != Enemies.end(); ){
+        if((*it)->isDead()){
+            delete *it;
+            it = Enemies.erase(it);
         }
+        else
+            ++it;
     }
+    if(TARGET >= min(Enemies.size(), MAX_ENEMIES_ON_FIELD))
+        changeTarget(0);
 }
 
-int Battle::checkHowManyEnemies() {
-    return (Enemies.size());
+size_t Battle::checkHowManyEnemies() const {
+    return Enemies.size();
 }
 
+void Battle::changeTarget(size_t t) {
+    if(t < Enemies.size() && t < MAX_ENEMIES_ON_FIELD)
+        TARGET = t;
+}
 
-void Battle::changeTarget(int t) {
-    TARGET = t;
+void Battle::retargetIfDead() {
+    if(!Enemies[TARGET]->isDead())
+        return;
+    for(size_t i = 0; i < Enemies.size() && i < MAX_ENEMIES_ON_FIELD; i++)
+        if(!Enemies[i]->isDead()) {
+            TARGET = i;
+            return;
+        }
 }
 
 void Battle::addToCombo(Card *C) {
     Combo.push_back(C);
-    C->setOrder(Combo.size());
+    C->setOrder((int)Combo.size());
+}
+
+void Battle::resetCardOrders() {
+    for(Card *c : CardsOnPlay)
+        c->setOrder(0);
 }
 
 
-
 void Battle::showStage() {
-    system("cls");
-    cout << " ---------------------------------------------------------------------------------------------------------------------" << endl;
+    clearScreen();
+    cout << " Turn " << TURN << endl;
+    cout << " " << string(CELL_WIDTH * 2 + 1, '-') << endl;
     //Print the first lines
     printLine();
 
     //For each 3 characters
-    for(int i = 0; i < 3; i++){
+    for(size_t i = 0; i < 3; i++){
+        string servantCell, enemyCell, hpCell;
+
         //This will show the servants one by one
-        if(Party.size() > i) {
-            cout << "|     " << Party[i]->getName() << " | " << "Level:" << Party[i]->getLvl();
-            for(int l = 0; l < 59 - (15 + Party[i]->getName().size() + Party[i]->getLvl()%10); l++)
-                cout << " ";
-        }
-        else{
-            cout << "|";
-            for(int l = 0; l < 58; l++)
-                cout << " ";
-        }
+        if(Party.size() > i)
+            servantCell = "     " + Party[i]->getName() + " | Level:" + to_string(Party[i]->getLvl());
 
         //This will show the enemies one by one with level
         if(Enemies.size() > i) {
-            cout << "|     " << Enemies[i]->getName() << " | Level:" << Enemies[i]->getLvl() << " | Rank:" << Enemies[i]->getRank();
-            for(int l = 0; l < 59 -(23 + Enemies[i]->getName().size() + Enemies[i]->getLvl()%10 + Enemies[i]->getRank().size()); l++)
-                cout << " ";
-            cout << "|" << endl;
-        }
-        else{
-            cout << "|";
-            for(int l = 0; l < 58; l++)
-                cout << " ";
-            cout << "|" << endl;
+            enemyCell = "     " + Enemies[i]->getName() + " | Level:" + to_string(Enemies[i]->getLvl()) + " | Rank:" + Enemies[i]->getRank();
+            hpCell = (TARGET == i ? " ->  HP:" : "     HP:") + to_string(Enemies[i]->getHp());
         }
 
+        cout << "|" << padRight(servantCell, CELL_WIDTH) << "|" << padRight(enemyCell, CELL_WIDTH) << "|" << endl;
         //WILL SHOW THE CHARGES
-        //Will show the enemy stats
-        if(TARGET == i && Enemies.size() > i){
-            cout << "|";
-            for(int l = 0; l < 58; l++)
-                cout << " ";
-            cout << "| ->  HP:" << Enemies[i]->getHp();
-            for(int l = 0; l < 47 - Enemies[i]->getHp()%10; l++)
-                cout << " ";
-            cout << "|" << endl;
-        }
-        else if(Enemies.size() > i){
-            cout << "|";
-            for(int l = 0; l < 58; l++)
-                cout << " ";
-            cout << "|     HP:" << Enemies[i]->getHp();
-            for(int l = 0; l < 47 - Enemies[i]->getHp()%10; l++)
-                cout << " ";
-            cout << "|" << endl;
-        }
-        else
-            printLine();
+        cout << "|" << padRight("", CELL_WIDTH) << "|" << padRight(hpCell, CELL_WIDTH) << "|" << endl;
 
         //Print the spaces between characters
-        for(int i = 0; i < 2; i++)
+        for(int l = 0; l < 2; l++)
             printLine();
 
         if(i < 2){
@@ -243,7 +231,7 @@ void Battle::showStage() {
             printLine();
         }
     }
-    cout << " ---------------------------------------------------------------------------------------------------------------------" << endl;
+    cout << " " << string(CELL_WIDTH * 2 + 1, '-') << endl;
 }
 
 void Battle::showOptions() {
@@ -253,72 +241,51 @@ void Battle::showOptions() {
             "            \\___ \\| |/ / | | / __|                                               / /\\ \\| __| __/ _` |/ __| |/ /\n"
             "            ____) |   <| | | \\__ \\                                              / ____ \\ |_| || (_| | (__|   < \n"
             "           |_____/|_|\\_\\_|_|_|___/                                             /_/    \\_\\__|\\__\\__,_|\\___|_|\\_\\\n";
-    cout << endl << "Press 1 to check skills, or 2 to Attack or 3 to exit simulation";
+    cout << endl << "1: skills | 2: attack | 3: exit battle | w/s: change target" << endl << "-> ";
 }
 
 void Battle::printLine() {
-    cout << "|";
-    for(int l = 0; l < 58; l++)
-        cout << " ";
-    cout << "|";
-    for(int l = 0; l < 58; l++)
-        cout << " ";
-    cout << "|" << endl;
+    cout << "|" << string(CELL_WIDTH, ' ') << "|" << string(CELL_WIDTH, ' ') << "|" << endl;
 }
 
 void Battle::showCards() {
     cout << "                  ";
-    for(int i = 0; i < 5; i++)
+    for(size_t i = 0; i < CardsOnPlay.size(); i++)
         cout << "___________       ";
     cout << endl;
     for(int i = 0; i < 6; i++){
         cout << "                 ";
-        for(int j = 0; j < 5; j++){
-            if(i == 1){
-                cout << "|  " << CardsOnPlay[j]->getServantAttached()->getAKA();
-                for(int n = 0; n < 9 - CardsOnPlay[j]->getServantAttached()->getAKA().size(); n++)
-                    cout << " ";
-                cout << "|     ";
-            }
-            else if(i == 4){
-                cout << "|  ";
-                if(CardsOnPlay[j]->getOrder() == 0)
-                    cout << " ";
-                else{
-                    cout << CardsOnPlay[j]->getOrder();
-                }
-                for(int n = 0; n < 8; n++)
-                    cout << " ";
-                cout << "|     ";
-            }
-            else if(i == 5){
-                cout << "|  " << CardsOnPlay[j]->getType();
-                for(int n = 0; n < 9 - CardsOnPlay[j]->getType().size(); n++)
-                    cout << " ";
-                cout << "|     ";
-            }
+        for(Card *card : CardsOnPlay){
+            if(i == 1)
+                cout << "|  " << padRight(card->getServantAttached()->getAKA(), 9) << "|     ";
+            else if(i == 4)
+                cout << "|  " << padRight(card->getOrder() == 0 ? "" : to_string(card->getOrder()), 9) << "|     ";
+            else if(i == 5)
+                cout << "|  " << padRight(card->getType(), 9) << "|     ";
             else
                 cout << "|           |     ";
         }
-        if(i == 1)
-            cout << "Use 1 to 5";
-        else if(i == 2)
-            cout << "to select";
-        else if(i == 3)
-            cout << "the cards:";
         cout << endl;
     }
     cout << "                  ";
-    for(int i = 0; i < 5; i++)
+    for(size_t i = 0; i < CardsOnPlay.size(); i++)
         cout << "-----------       ";
 }
 
 void Battle::showSkills(){
-
+    cout << endl;
+    for(Servant *s : Party) {
+        cout << s->getName() << ":" << endl;
+        const vector<string> &skills = s->getSkillNames();
+        if(skills.empty())
+            cout << "   (no skills)" << endl;
+        for(size_t i = 0; i < skills.size(); i++)
+            cout << "   " << i + 1 << " - " << skills[i] << endl;
+    }
 }
 
 void Battle::victoryScreen(){
-    system("cls");
+    clearScreen();
     cout << "\n\n\n\n\n\n\n\n########.......##...######################################......#######...####.###....###.####...######.####...###.\n"
             ".###..####....###...##.#########.#######.####.....####...#.......##....#..###..#####..##...###.###...##..###...###.\n"
             ".###..###....#####......###.##...####....###......###..#.........##...#...###..######.##...###.#####.....###...###.\n"
@@ -326,13 +293,20 @@ void Battle::victoryScreen(){
             ".###..###...#######....###.......####....###....#..##..#........###...#...###..##...####...###.#....####.###...###.\n"
             ".###...###.##....###...###........##.....###...##..##....##.....####......###..##....###...###..#....###.###...###.\n"
             ".###...##..##....####..###.......####....#######..########......####......###..##..........##....#####...###...##..\n"
-            ".#######................................................................................................#####.####.";
-    getch();
-    system("cls");
+            ".#######................................................................................................#####.####.\n";
+    waitForEnter();
+    clearScreen();
 }
 
 void Battle::orderCards() {
-    //Maybe put the 15 cards of the decks inside the vector and then make a random to get them
-    CardsOnPlay = Party[0]->getCards();
+    // Temporary: deal 5 random cards from all the party's cards.
+    // The real FGO deck (15 cards, reshuffled every 3 turns) comes in a later phase.
+    vector<Card*> all;
+    for(Servant *s : Party)
+        for(Card *c : s->getCards())
+            all.push_back(c);
+    shuffle(all.begin(), all.end(), rng);
+    if(all.size() > 5)
+        all.resize(5);
+    CardsOnPlay = all;
 }
-

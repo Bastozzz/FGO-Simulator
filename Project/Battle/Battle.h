@@ -7,13 +7,14 @@
 #include "../Servant/Servant.h"
 #include "../Enemy/Enemy.h"
 #include "../Battlefield/Battlefield.h"
-#include <chrono>
-#include <thread>
+#include <random>
 
+// A Battle owns the servants, enemies and battlefield it receives
+// and deletes them when it is destroyed.
 class Battle {
     int TURN;
     int STAGE;
-    int TARGET;
+    size_t TARGET;
 
     vector<Servant*> Party;
     vector<Enemy*> Enemies;
@@ -21,19 +22,30 @@ class Battle {
 
     vector<Card*> CardsOnPlay;
     vector<Card*> Combo;
+
+    mt19937 rng;
+
 public:
     Battle(vector<Servant*> P, vector<Enemy*> E, Battlefield * S);
     ~Battle();
 
-    void fight();
+    Battle(const Battle &) = delete;
+    Battle &operator=(const Battle &) = delete;
+
+    // Runs the battle until the player wins or leaves. Returns true on victory
+    bool fight();
+
+private:
     void attack();
     void chooseSkills();
 
     void damagePhase();
     void checkdeath();
-    void changeTarget(int t);
+    void changeTarget(size_t t);
+    void retargetIfDead();
 
     void addToCombo(Card *C);
+    void resetCardOrders();
 
     void showStage();
     static void showOptions();
@@ -43,9 +55,9 @@ public:
     void showSkills();
 
     void orderCards();
-    int checkHowManyEnemies();
+    size_t checkHowManyEnemies() const;
 
-    void victoryScreen();
+    static void victoryScreen();
 };
 
 
